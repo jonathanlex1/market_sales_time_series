@@ -1,7 +1,13 @@
 import streamlit as st
 import pandas as pd 
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns 
+from datetime import datetime, timedelta
+from sklearn.preprocessing import MinMaxScaler
+
+from keras.models import load_model
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -99,3 +105,52 @@ st.subheader('Daily Sales 2013-2015')
 fig,ax = plt.subplots(figsize=(12,5))
 data_series.plot(x='date', y='avg',ax=ax)
 st.pyplot(fig)
+
+#minxmax scaler
+scaler = MinMaxScaler(feature_range=(-1,1))
+
+# #load model 
+# lstm_model = load_model('./model/lstm_model.h5')
+
+
+# last_datas = data_series[-30:]
+# last_data_scaled = scaler.transform(last_datas)
+# input_data = last_data_scaled.reshape((1,30,1))
+
+# predictions = []
+
+# for i in range(30) : 
+#     predicted_value = lstm_model.predict(input_data)
+#     predicted_actual = scaler.inverse_transform(predicted_value)
+#     predictions.append(predicted_actual[0,0])
+
+#     predicted_actual_reshaped = predicted_actual.reshape(1,1,1)
+#     input_data = np.append(input_data[:, 1:, :],predicted_actual_reshaped, axis=1)
+
+
+# start_date = data_series.index[-1]
+# date = [start_date + timedelta(days=x) for x in range(1, len(predictions)+1)]
+
+# df_predictions = pd.DataFrame(
+#     {'date' : date,
+#      'prediction' : predictions}
+# )
+
+# df_predictions = df_predictions.set_index('date')
+
+# st.table(df_predictions)
+
+st.subheader('Forecasting Daily Sales')
+number = st.select_slider(
+    "Select a daily number from 1 - 30",
+    options=[
+        1,2,3,4,5,6,7,8,9,10,
+        11,12,13,14,15,16,17,18,19,20,
+        21,22,23,24,25,26,27,28,29,30
+    ],
+)
+
+if number == 1 : 
+    print(number)
+
+
