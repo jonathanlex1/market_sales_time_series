@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore')
 sns.set_style('whitegrid')    
 
 st.set_page_config(
-    page_title="Market Sales Dashboard",
+    page_title="Market Sales Analysis",
     page_icon="🏪",
     layout="wide",
     initial_sidebar_state="expanded")
@@ -22,13 +22,26 @@ st.set_page_config(
 st.title('🏪 Market Sales Dashboard')
 
 #sitebar
-with st.sidebar : 
-    st.subheader('Sales')
+# with st.sidebar : 
+#     st.subheader('Sales')
+
+#     option = st.selectbox(
+#     "How would you like to be contacted?",
+#     ("Onion", "Potato", "Ginger"),
+#     )
+
+#     if st.button('app')
+#     if option == 'Onion' : 
+#         st.switch_page('./pages/onion_pg.py')
+#     elif option == 'Potato' :
+#         st.switch_page('./pages/potato_pg.py')
+#     elif option == 'Ginger' : 
+#         st.switch_page('./pages/ganger_pg.py')
 
 
 #import data 
 df = pd.read_csv('./cleaned_market_sales.csv')
-data_series = pd.read_csv("C:\Streamlit Learning\Time Series Sales Market\market_sales_time_series\daily_sales_data.csv")
+data_series = pd.read_csv("./daily_sales_data.csv")
 
 total_sales = sum(df['avg'])
 total_min_sales = sum(df['min'])
@@ -48,7 +61,7 @@ st.subheader('High and Low Demand Commodities')
 fig, ax = plt.subplots(1,2, figsize=(12,5))
 
 df['commodity'].value_counts().head(10).plot(kind='barh', title = 'Top 10 Most Quantities Of Commodity', ax=ax[0],color= 'dodgerblue')
-df['commodity'].value_counts().tail(10).plot(kind='barh', title = 'Top 10 Less Quantities Of Commodity', ax=ax[1])
+df['commodity'].value_counts().tail(10).plot(kind='barh', title = 'Top 10 Less Quantities Of Commodity', ax=ax[1],color= 'dodgerblue')
 ax[1].invert_yaxis()
 plt.tight_layout()
 
@@ -63,7 +76,7 @@ col1,col2 = st.columns(2)
 with col1 :
     
     fig,ax = plt.subplots(figsize=(5,5))
-    hisplot= sns.histplot(data=df['avg'], kde=True, ax=ax)
+    hisplot= sns.histplot(data=df['avg'], kde=True, ax=ax,color= 'dodgerblue')
 
     st.pyplot(fig)
   
@@ -103,43 +116,10 @@ st.markdown('- Asparagus was only available from 2013 to 2016, whereas other com
 #daily sales
 st.subheader('Daily Sales 2013-2015')
 fig,ax = plt.subplots(figsize=(12,5))
-data_series.plot(x='date', y='avg',ax=ax)
+data_series.plot(x='date', y='avg',ax=ax,color= 'dodgerblue')
 st.pyplot(fig)
 
-#minxmax scaler
-scaler = MinMaxScaler(feature_range=(-1,1))
-
-# #load model 
-# lstm_model = load_model('./model/lstm_model.h5')
-
-
-# last_datas = data_series[-30:]
-# last_data_scaled = scaler.transform(last_datas)
-# input_data = last_data_scaled.reshape((1,30,1))
-
-# predictions = []
-
-# for i in range(30) : 
-#     predicted_value = lstm_model.predict(input_data)
-#     predicted_actual = scaler.inverse_transform(predicted_value)
-#     predictions.append(predicted_actual[0,0])
-
-#     predicted_actual_reshaped = predicted_actual.reshape(1,1,1)
-#     input_data = np.append(input_data[:, 1:, :],predicted_actual_reshaped, axis=1)
-
-
-# start_date = data_series.index[-1]
-# date = [start_date + timedelta(days=x) for x in range(1, len(predictions)+1)]
-
-# df_predictions = pd.DataFrame(
-#     {'date' : date,
-#      'prediction' : predictions}
-# )
-
-# df_predictions = df_predictions.set_index('date')
-
-# st.table(df_predictions)
-
+## Forecasting
 st.subheader('Forecasting Daily Sales')
 number = st.select_slider(
     "Select a daily number from 1 - 30",
@@ -150,7 +130,49 @@ number = st.select_slider(
     ],
 )
 
-if number == 1 : 
-    print(number)
+#minxmax scaler
+scaler = MinMaxScaler(feature_range=(-1,1))
+
+if not pd.api.types.is_datetime64_any_dtype(data_series.index):
+    data_series.index = pd.to_datetime(data_series.index)
+
+# #load model 
+lstm_model = load_model('./model/lstm_model.h5')
+
+#getting 30 last data for predict 
+data_series = data_series.set_index('date')
+last_datas = data_series[-30:]
+last_datas_scaled = scaler.fit_transform(last_datas[['avg']])
+input_data = last_datas_scaled.reshape((1,30,1))
+
+#prediction new values in the future
+predictions = []
+
+for i in range(number) : 
+    predicted_value = lstm_model.predict(input_data)
+    predicted_actual = scaler.inverse_transform(predicted_value)
+    predictions.append(predicted_actual[0,0])
+
+    predicted_actual_reshaped = predicted_actual.reshape(1,1,1)
+    input_data = np.append(input_data[:, 1:, :],predicted_actual_reshaped, axis=1)
+
+#making dataframe and concatenate new date and prediction
+start_date = last_datas.index[-1]
+
+if isinstance(start_date, str):
+    start_date = pd.to_datetime(start_date)
+
+date = [start_date + timedelta(days=x) for x in range(1, len(predictions)+1)]
+
+df_predictions = pd.DataFrame(
+    {'date' : date,
+     'prediction' : predictions}
+)
+
+df_predictions = df_predictions.set_index('date')
+
+st.line_chart(df_predictions)
+
+
 
 
