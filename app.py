@@ -172,6 +172,7 @@ df_predictions = pd.DataFrame(
 df_predictions = df_predictions.set_index('date')
 
 st.line_chart(df_predictions)
+st.table(df_predictions)
 
 
 
