@@ -20,8 +20,8 @@ st.set_page_config(page_title="Onion Analysis ", page_icon="📈")
 
 st.title('🧅 Onion Sales Analysis')  
 
-df = pd.read_csv('./cleaned_market_sales.csv')
-onion_series = pd.read_csv('./onion_series.csv')
+df = pd.read_csv('./data/cleaned_market_sales.csv')
+onion_series = pd.read_csv('./data/onion_series.csv')
 
 st.subheader('Onion Dry (Indian) vs Onion Dry (Chinese)')
 
@@ -110,6 +110,7 @@ prediction_df = pd.DataFrame({
 
 prediction_df = prediction_df.set_index('date')
 
-st.line_chart(prediction_df)
-st.table(prediction_df)
+tab1, tab2 = st.tabs(["📈 Chart", "🗃 Data"])
+tab1.line_chart(prediction_df)
+tab2.write(prediction_df)
 
